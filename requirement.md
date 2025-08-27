@@ -89,6 +89,14 @@ A simple, shareable web application that allows users to track shared expenses a
   to: 1,
   amount: 30.00
 }
+
+// State includes ID counters for clean incremental IDs
+{
+  people: [],
+  expenses: [],
+  nextPersonId: 1,
+  nextExpenseId: 1
+}
 ```
 
 ---

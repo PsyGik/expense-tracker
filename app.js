@@ -1,7 +1,9 @@
 // Application State
 let state = {
     people: [],
-    expenses: []
+    expenses: [],
+    nextPersonId: 1,
+    nextExpenseId: 1
 };
 
 let editingPersonId = null;
@@ -21,16 +23,27 @@ function serializeState(state) {
 
 function deserializeState(encoded) {
     try {
-        if (!encoded) return { people: [], expenses: [] };
+        if (!encoded) return { people: [], expenses: [], nextPersonId: 1, nextExpenseId: 1 };
         const jsonString = decodeURIComponent(atob(encoded));
         const parsed = JSON.parse(jsonString);
+        
+        // Ensure we have the required arrays
+        const people = Array.isArray(parsed.people) ? parsed.people : [];
+        const expenses = Array.isArray(parsed.expenses) ? parsed.expenses : [];
+        
+        // Calculate next IDs based on existing data
+        const maxPersonId = people.length > 0 ? Math.max(...people.map(p => p.id || 0)) : 0;
+        const maxExpenseId = expenses.length > 0 ? Math.max(...expenses.map(e => e.id || 0)) : 0;
+        
         return {
-            people: Array.isArray(parsed.people) ? parsed.people : [],
-            expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+            people,
+            expenses,
+            nextPersonId: maxPersonId + 1,
+            nextExpenseId: maxExpenseId + 1
         };
     } catch (error) {
         console.error('Error deserializing state:', error);
-        return { people: [], expenses: [] };
+        return { people: [], expenses: [], nextPersonId: 1, nextExpenseId: 1 };
     }
 }
 
@@ -72,8 +85,12 @@ function loadStateFromURL() {
 }
 
 // Utility Functions
-function generateId() {
-    return Date.now() + Math.random();
+function generatePersonId() {
+    return state.nextPersonId++;
+}
+
+function generateExpenseId() {
+    return state.nextExpenseId++;
 }
 
 function formatCurrency(amount) {
@@ -120,7 +137,7 @@ function addPerson(name) {
     }
     
     const person = {
-        id: generateId(),
+        id: generatePersonId(),
         name: name
     };
     
@@ -181,11 +198,8 @@ function addExpense(description, amount, type, date, paidBy, splitBetween) {
     description = description.trim();
     amount = parseFloat(amount);
     type = type.trim();
-    const originalPaidBy = paidBy; // Keep original for debugging
     paidBy = parseInt(paidBy);
     splitBetween = splitBetween.map(id => parseInt(id));
-    
-    console.log('Debug - addExpense called with:', { description, amount, type, date, originalPaidBy, paidBy, splitBetween });
     
     if (!description) {
         showError('expenseError', 'Please enter a description');
@@ -208,8 +222,7 @@ function addExpense(description, amount, type, date, paidBy, splitBetween) {
     }
     
     if (isNaN(paidBy) || !state.people.find(p => p.id === paidBy)) {
-        console.log('Debug - paidBy validation failed:', { originalPaidBy, paidBy, isNaN: isNaN(paidBy), people: state.people });
-        showError('expenseError', 'Please select who paid (dropdown must be selected)');
+        showError('expenseError', 'Please select who paid');
         return false;
     }
     
@@ -226,7 +239,7 @@ function addExpense(description, amount, type, date, paidBy, splitBetween) {
     }
     
     const expense = {
-        id: generateId(),
+        id: generateExpenseId(),
         description,
         amount,
         type,
