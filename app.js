@@ -181,8 +181,11 @@ function addExpense(description, amount, type, date, paidBy, splitBetween) {
     description = description.trim();
     amount = parseFloat(amount);
     type = type.trim();
+    const originalPaidBy = paidBy; // Keep original for debugging
     paidBy = parseInt(paidBy);
     splitBetween = splitBetween.map(id => parseInt(id));
+    
+    console.log('Debug - addExpense called with:', { description, amount, type, date, originalPaidBy, paidBy, splitBetween });
     
     if (!description) {
         showError('expenseError', 'Please enter a description');
@@ -204,8 +207,9 @@ function addExpense(description, amount, type, date, paidBy, splitBetween) {
         return false;
     }
     
-    if (!paidBy || !state.people.find(p => p.id === paidBy)) {
-        showError('expenseError', 'Please select who paid');
+    if (isNaN(paidBy) || !state.people.find(p => p.id === paidBy)) {
+        console.log('Debug - paidBy validation failed:', { originalPaidBy, paidBy, isNaN: isNaN(paidBy), people: state.people });
+        showError('expenseError', 'Please select who paid (dropdown must be selected)');
         return false;
     }
     
@@ -264,7 +268,7 @@ function editExpense(id, description, amount, type, date, paidBy, splitBetween) 
         return false;
     }
     
-    if (!paidBy || !state.people.find(p => p.id === paidBy)) {
+    if (isNaN(paidBy) || !state.people.find(p => p.id === paidBy)) {
         showError('editExpenseError', 'Please select who paid');
         return false;
     }
